@@ -1,1 +1,5 @@
 project_data/
+generated_images/
+sampled_images/
+.ipynb_checkpoints/
+__pycache__/

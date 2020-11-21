@@ -15,7 +15,6 @@ class DataLoader():
         imgs_A = []
         imgs_B = []
         for img_path in batch_images:
-            print(img_path)
             img = self.imread(img_path)
             h, w, _ = img.shape
             _w = int(w/2)
@@ -34,7 +33,7 @@ class DataLoader():
     def load_batch(self, batch_size=8, is_testing=False):
         data_type = "train" if not is_testing else "val"
         path = glob('./project_data/%s/%s/*' % (self.dataset_name, data_type))
-        self.n_batches = int(len(path) / batch_size)
+        self.n_batches = int(len(path) / (batch_size))
         for i in range(self.n_batches-1):
             batch = path[i*batch_size:(i+1)*batch_size]
             imgs_A, imgs_B, imgpaths = [], [], []

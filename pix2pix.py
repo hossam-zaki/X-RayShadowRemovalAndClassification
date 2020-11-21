@@ -1,5 +1,6 @@
 from __future__ import print_function, division
 import scipy
+import tensorflow as tf
 from keras.datasets import mnist
 from keras_contrib.layers.normalization.instancenormalization import InstanceNormalization
 from keras.layers import Input, Dense, Reshape, Flatten, Dropout, Concatenate
@@ -15,6 +16,10 @@ from dataloader import DataLoader
 import numpy as np
 import os
 import cv2
+import smtplib, ssl
+
+#notify me when of training progress
+
 class Pix2Pix():
     def __init__(self):
         # Input shape
@@ -30,8 +35,8 @@ class Pix2Pix():
         patch = int(self.img_rows / 2**4)
         self.disc_patch = (patch, patch, 1)
         # Number of filters in the first layer of G and D
-        self.gf = 64
-        self.df = 64
+        self.gf = 32
+        self.df = 32
         optimizer = Adam(0.0003, 0.5)
         # Build and compile the discriminator
         self.discriminator = self.build_discriminator()
@@ -80,19 +85,19 @@ class Pix2Pix():
         d0 = Input(shape=self.img_shape)
         # Downsampling
         d1 = conv2d(d0, self.gf, bn=False)
-        d2 = conv2d(d1, self.gf*2)
-        d3 = conv2d(d2, self.gf*4)
-        d4 = conv2d(d3, self.gf*8)
-        d5 = conv2d(d4, self.gf*8)
-        d6 = conv2d(d5, self.gf*8)
-        d7 = conv2d(d6, self.gf*8)
+        d2 = conv2d(d1, self.gf*1) #32
+        d3 = conv2d(d2, self.gf*2) #64
+        d4 = conv2d(d3, self.gf*4) #128
+        #d5 = conv2d(d4, self.gf*4)
+        # d6 = conv2d(d5, self.gf*8)
+        # d7 = conv2d(d6, self.gf*8)
         # Upsampling
-        u1 = deconv2d(d7, d6, self.gf*8)
-        u2 = deconv2d(u1, d5, self.gf*8)
-        u3 = deconv2d(u2, d4, self.gf*8)
-        u4 = deconv2d(u3, d3, self.gf*4)
+        # u1 = deconv2d(d7, d6, self.gf*8)
+        # u2 = deconv2d(u1, d5, self.gf*8)
+        #u3 = deconv2d(d5, d4, self.gf*4)
+        u4 = deconv2d(d4, d3, self.gf*4)
         u5 = deconv2d(u4, d2, self.gf*2)
-        u6 = deconv2d(u5, d1, self.gf)
+        u6 = deconv2d(u5, d1, self.gf*1)
         u7 = UpSampling2D(size=2)(u6)
         output_img = Conv2D(self.channels, kernel_size=4, strides=1, padding='same', activation='tanh')(u7)
         return Model(d0, output_img)
@@ -126,7 +131,7 @@ class Pix2Pix():
                 # ---------------------
                 # Condition on B and generate a translated version
                 fake_A = self.generator.predict(imgs_B)
-                if batch_i % 4 == 0:
+                if batch_i % 400 == 0:
                     for im in range(len(fake_A)):
                         gen_output_img = (fake_A[im] + 1) * 127.5
                         org_data = cv2.imread(imgpaths[im])
@@ -177,4 +182,20 @@ class Pix2Pix():
         plt.close()
 if __name__ == '__main__':
     gan = Pix2Pix()
-    gan.train(epochs=200, batch_size=1, sample_interval=200)
+    gan.train(epochs=30, batch_size=4, sample_interval=200)
+    gan.combined.save_weights("ganWeights.h5")
+    gan.generator.save_weights("generatorWeights.h5")
+    gan.discriminator.save_weights("discriminatorWeights.h5")
+    receiver_emails = ['hossam_zaki@brown.edu', 'mohamad_abouelafia@brown.edu', 'nasheath_ahmed@brown.edu', 'andrew_aoun@brown.edu']
+    for bozo in receiver_emails:
+        port = 465
+        smtp_server = "smtp.gmail.com"
+        sender_email = "nasheathpython@gmail.com" # Enter your address
+        receiver_email = bozo # Enter receiver address
+        password = "nasheath24!"
+        message = 'Subject: {}\n\n{}'.format("whaddup bimbos", "This message is sent from Python saying your training is finished! aHaHa.")
+
+        context = ssl.create_default_context()
+        with smtplib.SMTP_SSL(smtp_server, port, context=context) as server:
+            server.login(sender_email, password)
+            server.sendmail(sender_email, receiver_email, message)

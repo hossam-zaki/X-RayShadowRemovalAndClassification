@@ -43,6 +43,6 @@ for batch_i, (imgs_A, imgs_B, imgpaths) in enumerate(data_loader.load_batch(1, i
         org_data_right = org_data[:, gan.img_cols:,:]
         combined_out_img = np.concatenate((org_data_left,org_data_right, gen_output_img), 1)
         print(imgpaths[im])
-        cv2.imwrite("/home/nasheath_ahmed/X-RayShadowRemovalAndClassification/validated_images/" + imgpaths[im].split("/")[-1], combined_out_img)
+        cv2.imwrite("/home/nasheath_ahmed/X-RayShadowRemovalAndClassification/validated_images_new/" + imgpaths[im].split("/")[-1], combined_out_img)
         break
 

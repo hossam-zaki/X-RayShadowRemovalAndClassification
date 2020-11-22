@@ -65,14 +65,14 @@ class Pix2Pix():
                               optimizer=optimizer)
     def build_generator(self):
         """U-Net Generator"""
-        def conv2d(layer_input, filters, f_size=4, bn=True):
+        def conv2d(layer_input, filters, f_size=5, bn=True):
             """Layers used during downsampling"""
             d = Conv2D(filters, kernel_size=f_size, strides=2, padding='same')(layer_input)
             d = LeakyReLU(alpha=0.2)(d)
             if bn:
                 d = BatchNormalization(momentum=0.8)(d)
             return d
-        def deconv2d(layer_input, skip_input, filters, f_size=4, dropout_rate=0):
+        def deconv2d(layer_input, skip_input, filters, f_size=5, dropout_rate=0):
             """Layers used during upsampling"""
             u = UpSampling2D(size=2)(layer_input)
             u = Conv2D(filters, kernel_size=f_size, strides=1, padding='same', activation='relu')(u)
@@ -85,24 +85,24 @@ class Pix2Pix():
         d0 = Input(shape=self.img_shape)
         # Downsampling
         d1 = conv2d(d0, self.gf, bn=False)
-        d2 = conv2d(d1, self.gf*1) #32
-        d3 = conv2d(d2, self.gf*2) #64
-        d4 = conv2d(d3, self.gf*4) #128
-        d5 = conv2d(d4, self.gf*4)
+        d2 = conv2d(d1, self.gf*2) #32
+        d3 = conv2d(d2, self.gf*4) #64
+        d4 = conv2d(d3, self.gf*8) #128
+        d5 = conv2d(d4, self.gf*8)
         d6 = conv2d(d5, self.gf*8)
-        # d7 = conv2d(d6, self.gf*8)
+        d7 = conv2d(d6, self.gf*8)
         # Upsampling
-        # u1 = deconv2d(d7, d6, self.gf*8)
-        u2 = deconv2d(d6, d5, self.gf*8)
-        u3 = deconv2d(u2, d4, self.gf*4)
-        u4 = deconv2d(u3, d3, self.gf*4)
-        u5 = deconv2d(u4, d2, self.gf*2)
-        u6 = deconv2d(u5, d1, self.gf*1)
+        u1 = deconv2d(d7, d6, self.gf*8)
+        u2 = deconv2d(u1, d5, self.gf*8)
+        u3 = deconv2d(u2, d4, self.gf*8)
+        u4 = deconv2d(u3, d3, self.gf*8)
+        u5 = deconv2d(u4, d2, self.gf*4)
+        u6 = deconv2d(u5, d1, self.gf*2)
         u7 = UpSampling2D(size=2)(u6)
         output_img = Conv2D(self.channels, kernel_size=4, strides=1, padding='same', activation='tanh')(u7)
         return Model(d0, output_img)
     def build_discriminator(self):
-        def d_layer(layer_input, filters, f_size=4, bn=True):
+        def d_layer(layer_input, filters, f_size=5, bn=True):
             """Discriminator layer"""
             d = Conv2D(filters, kernel_size=f_size, strides=2, padding='same')(layer_input)
             d = LeakyReLU(alpha=0.2)(d)
@@ -140,7 +140,7 @@ class Pix2Pix():
                         org_data_right = org_data[:, self.img_cols:,:]
                         combined_out_img = np.concatenate((org_data_left,org_data_right, gen_output_img), 1)
                         print(imgpaths[im])
-                        cv2.imwrite("/home/nasheath_ahmed/X-RayShadowRemovalAndClassification/generated_images_new/" + str(epoch) + "_" + str(batch_i) + "_" + imgpaths[im].split("/")[-1], combined_out_img)
+                        cv2.imwrite("/home/nasheath_ahmed/X-RayShadowRemovalAndClassification/generated_images_new1/" + str(epoch) + "_" + str(batch_i) + "_" + imgpaths[im].split("/")[-1], combined_out_img)
                         break
                 # Train the discriminators (original images = real / generated = Fake)
                 d_loss_real = self.discriminator.train_on_batch([imgs_A, imgs_B], valid)
@@ -153,7 +153,7 @@ class Pix2Pix():
                 g_loss = self.combined.train_on_batch([imgs_A, imgs_B], [valid, imgs_A])
                 elapsed_time = datetime.datetime.now() - start_time
                 # Plot the progress
-                with open("training1.txt", "a") as myfile:
+                with open("training2.txt", "a") as myfile:
                     myfile.write("[Epoch %d/%d] [Batch %d/%d] [D loss: %f, acc: %3d%%] [G loss: %f] time: %s \n" % (epoch, epochs,
                                                                         batch_i, self.data_loader.n_batches,
                                                                         d_loss[0], 100*d_loss[1],

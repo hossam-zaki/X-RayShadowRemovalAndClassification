@@ -5,3 +5,5 @@ sampled_images/
 __pycache__/
 validated_images/
 generated_images_new/
+generated_images_new1/
+validated_images_new/

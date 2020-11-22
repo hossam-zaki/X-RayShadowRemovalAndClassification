@@ -3,3 +3,5 @@ generated_images/
 sampled_images/
 .ipynb_checkpoints/
 __pycache__/
+validated_images/
+generated_images_new/

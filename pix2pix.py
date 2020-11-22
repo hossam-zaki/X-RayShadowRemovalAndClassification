@@ -88,14 +88,14 @@ class Pix2Pix():
         d2 = conv2d(d1, self.gf*1) #32
         d3 = conv2d(d2, self.gf*2) #64
         d4 = conv2d(d3, self.gf*4) #128
-        #d5 = conv2d(d4, self.gf*4)
-        # d6 = conv2d(d5, self.gf*8)
+        d5 = conv2d(d4, self.gf*4)
+        d6 = conv2d(d5, self.gf*8)
         # d7 = conv2d(d6, self.gf*8)
         # Upsampling
         # u1 = deconv2d(d7, d6, self.gf*8)
-        # u2 = deconv2d(u1, d5, self.gf*8)
-        #u3 = deconv2d(d5, d4, self.gf*4)
-        u4 = deconv2d(d4, d3, self.gf*4)
+        u2 = deconv2d(d6, d5, self.gf*8)
+        u3 = deconv2d(u2, d4, self.gf*4)
+        u4 = deconv2d(u3, d3, self.gf*4)
         u5 = deconv2d(u4, d2, self.gf*2)
         u6 = deconv2d(u5, d1, self.gf*1)
         u7 = UpSampling2D(size=2)(u6)
@@ -140,7 +140,7 @@ class Pix2Pix():
                         org_data_right = org_data[:, self.img_cols:,:]
                         combined_out_img = np.concatenate((org_data_left,org_data_right, gen_output_img), 1)
                         print(imgpaths[im])
-                        cv2.imwrite("/home/nasheath_ahmed/X-RayShadowRemovalAndClassification/generated_images/" + str(epoch) + "_" + str(batch_i) + "_" + imgpaths[im].split("/")[-1], combined_out_img)
+                        cv2.imwrite("/home/nasheath_ahmed/X-RayShadowRemovalAndClassification/generated_images_new/" + str(epoch) + "_" + str(batch_i) + "_" + imgpaths[im].split("/")[-1], combined_out_img)
                         break
                 # Train the discriminators (original images = real / generated = Fake)
                 d_loss_real = self.discriminator.train_on_batch([imgs_A, imgs_B], valid)
@@ -153,6 +153,12 @@ class Pix2Pix():
                 g_loss = self.combined.train_on_batch([imgs_A, imgs_B], [valid, imgs_A])
                 elapsed_time = datetime.datetime.now() - start_time
                 # Plot the progress
+                with open("training1.txt", "a") as myfile:
+                    myfile.write("[Epoch %d/%d] [Batch %d/%d] [D loss: %f, acc: %3d%%] [G loss: %f] time: %s \n" % (epoch, epochs,
+                                                                        batch_i, self.data_loader.n_batches,
+                                                                        d_loss[0], 100*d_loss[1],
+                                                                        g_loss[0],
+                                                                        elapsed_time)) 
                 print ("[Epoch %d/%d] [Batch %d/%d] [D loss: %f, acc: %3d%%] [G loss: %f] time: %s" % (epoch, epochs,
                                                                         batch_i, self.data_loader.n_batches,
                                                                         d_loss[0], 100*d_loss[1],
@@ -182,7 +188,7 @@ class Pix2Pix():
         plt.close()
 if __name__ == '__main__':
     gan = Pix2Pix()
-    gan.train(epochs=30, batch_size=4, sample_interval=200)
+    gan.train(epochs=25, batch_size=4, sample_interval=200)
     gan.combined.save_weights("ganWeights.h5")
     gan.generator.save_weights("generatorWeights.h5")
     gan.discriminator.save_weights("discriminatorWeights.h5")

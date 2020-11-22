@@ -31,7 +31,7 @@ class DataLoader():
         imgs_B = np.array(imgs_B)/127.5 - 1.
         return imgs_B, imgs_A
     def load_batch(self, batch_size=8, is_testing=False):
-        data_type = "train" if not is_testing else "val"
+        data_type = "train" if not is_testing else "test"
         path = glob('./project_data/%s/%s/*' % (self.dataset_name, data_type))
         self.n_batches = int(len(path) / (batch_size))
         for i in range(self.n_batches-1):

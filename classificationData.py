@@ -55,7 +55,6 @@ class Datasets():
             # ============================================================
 
             data_gen = tf.keras.preprocessing.image.ImageDataGenerator(
-                shear_range = 0.2,
                 zoom_range = 0.2,
                 horizontal_flip=True,
                 featurewise_std_normalization=True)
@@ -80,7 +79,7 @@ class Datasets():
             path,
             target_size=(img_size, img_size),
             class_mode='sparse',
-            batch_size=100,
+            batch_size=4,
             shuffle=shuffle,
             classes=classes_for_flow)
 

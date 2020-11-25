@@ -120,10 +120,12 @@ def main():
     #     model.load_weights(ARGS.load_checkpoint)
 
     # Compile model graph
+    optimizer = tf.keras.optimizers.SGD(learning_rate=0.001)
+    #changed from sparse_categorical 
     model.compile(
-        optimizer='adam',
-        loss="sparse_categorical_crossentropy",
-        metrics=["sparse_categorical_accuracy"])
+        optimizer=optimizer,
+        loss="categorical_crossentropy",
+        metrics=["categorical_accuracy"])
 
     if ARGS.evaluate:
         test(model, datasets.test_data)

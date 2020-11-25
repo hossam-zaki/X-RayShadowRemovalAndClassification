@@ -1,0 +1,11 @@
+November 24th
+Added the ReduceLROnPlateau
+Removed Shear range from the datagenerator
+
+
+November 25th
+Changed the optimizer from Adam with lr = 0.001 to SGD with lr = 0.001
+Changed the loss from sparse_categorical_cross_entropy to categorical_cross_entropy
+
+
+

@@ -1,11 +1,12 @@
 import os
 import argparse
 import tensorflow as tf
-from vgg_model import VGGModel
-from your_model import YourModel
-import hyperparameters as hp
-from preprocess import Datasets
-from tensorboard_utils import ImageLabelingLogger, ConfusionMatrixLogger
+from tensorflow import keras
+from tensorflow.keras import layers
+# from your_model import YourModel
+# import hyperparameters as hp
+from classificationData import Datasets
+# from tensorboard_utils import ImageLabelingLogger, ConfusionMatrixLogger
 
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 
@@ -47,7 +48,10 @@ def train(model, datasets, checkpoint_path):
         tf.keras.callbacks.TensorBoard(
             update_freq='batch',
             profile_batch=0),
-        ImageLabelingLogger(datasets)
+        tf.keras.callbacks.ReduceLROnPlateau(
+            monitor='val_loss', 
+            patience=2, 
+            mode='min')
     ]
 
 
@@ -55,7 +59,7 @@ def train(model, datasets, checkpoint_path):
     model.fit(
         x=datasets.train_data,
         validation_data=datasets.test_data,
-        epochs=50,
+        epochs=10,
         batch_size=None,
         callbacks=callback_list,
     )
@@ -75,50 +79,59 @@ def main():
 
     datasets = Datasets('project_data/classificationProcessed')
 
-    convolutionBase = tf.keras.applications.DenseNet121(
-    include_top=False,
-    weights="imagenet",
-    input_shape=(1024, 1024, 3),
-    pooling=None)
+    convolutionBase = tf.keras.applications.ResNet50(
+        include_top=False, 
+        weights='imagenet', 
+        input_shape=(1024, 1024, 3), 
+        pooling=None)
 
-    convolutionBase.trainable = True
-    set_trainable = False
-    for layer in convolutionBase.layers:
-        print(layer.name)
-        if layer.name == 'conv5_block1_1_conv':
-            set_trainable = True
-            layer.trainable = set_trainable
-        else:
-            layer.trainable = set_trainable
+    # convolutionBase.trainable = True
+    # set_trainable = False
+    # for layer in convolutionBase.layers:
+    #     print(layer.name)
+    #     if layer.name == 'conv5_block1_1_conv':
+    #         set_trainable = True
+    #         layer.trainable = set_trainable
+    #     else:
+    #         layer.trainable = set_trainable
 
     model = tf.keras.Sequential(
         [
-            convolutionBase,
-            tf.keras.layers.Flatten(),
-            tf.keras.layers.Dense(1024, activation="relu", name="layer1"),
-            tf.keras.layers.Dense(512, activation="relu", name="layer2"),
-            tf.keras.layers.Dense(128, activation="relu", name="layer3"),
-            tf.keras.layers.Dense(9, name="layer4"),
+            convolutionBase
+            # tf.keras.layers.Flatten(),
+            # tf.keras.layers.Dense(1024, activation="relu", name="layer1"),
+            # tf.keras.layers.Dense(512, activation="relu", name="layer2"),
+            # tf.keras.layers.Dense(128, activation="relu", name="layer3"),
+            # tf.keras.layers.Dense(9, name="layer4")
         ]
     )
+    model.add(keras.layers.Flatten())
+    # model.add(keras.layers.Dense(1024, activation="relu"))
+    # model.add(keras.layers.Dense(512, activation="relu"))
+    model.add(keras.layers.Dense(128, activation="relu"))
+    model.add(keras.layers.Dense(9, activation='softmax'))
 
 
     model(tf.keras.Input(shape=(1024, 1024, 3)))
     checkpoint_path = "./classificationWeights/"
-    model.summary()
+    print(model.summary())
 
-    if ARGS.load_checkpoint is not None:
-        model.load_weights(ARGS.load_checkpoint)
+    # if ARGS.load_checkpoint is not None:
+    #     model.load_weights(ARGS.load_checkpoint)
 
     # Compile model graph
+    optimizer = tf.keras.optimizers.SGD(learning_rate=0.001)
+    #changed from sparse_categorical 
     model.compile(
-        optimizer=model.optimizer,
-        loss=model.loss_fn,
-        metrics=["sparse_categorical_accuracy"])
+        optimizer=optimizer,
+        loss="categorical_crossentropy",
+        metrics=["categorical_accuracy"])
 
     if ARGS.evaluate:
         test(model, datasets.test_data)
     else:
+        train(model, datasets, checkpoint_path)
+        convolutionBase.trainable = True
         train(model, datasets, checkpoint_path)
 
 # Make arguments global

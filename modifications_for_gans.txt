@@ -1,0 +1,12 @@
+November 22nd
+Added in morelayers for the encoding and decoding for the upscale
+Increased the number of filter channels
+
+November 25th
+Will be removing the encoding layers so we now have only 4 convolution layers for the encoding where as before we had 7
+In a format like below with self.gf = 32
+    d1 = conv2d(d0, self.gf, bn=False)
+    d2 = conv2d(d1, self.gf*2) #32
+    d3 = conv2d(d2, self.gf*4) #64
+    d4 = conv2d(d3, self.gf*8) #128
+Adjusted the learning rate is 0.01

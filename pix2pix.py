@@ -37,7 +37,7 @@ class Pix2Pix():
         # Number of filters in the first layer of G and D
         self.gf = 32
         self.df = 32
-        optimizer = Adam(0.0003, 0.5)
+        optimizer = Adam(0.01, 0.5)
         # Build and compile the discriminator
         self.discriminator = self.build_discriminator()
         self.discriminator.compile(loss='mse',
@@ -85,17 +85,17 @@ class Pix2Pix():
         d0 = Input(shape=self.img_shape)
         # Downsampling
         d1 = conv2d(d0, self.gf, bn=False)
-        d2 = conv2d(d1, self.gf*2) #32
-        d3 = conv2d(d2, self.gf*4) #64
-        d4 = conv2d(d3, self.gf*8) #128
-        d5 = conv2d(d4, self.gf*8)
-        d6 = conv2d(d5, self.gf*8)
-        d7 = conv2d(d6, self.gf*8)
+        d2 = conv2d(d1, self.gf*2) #62
+        d3 = conv2d(d2, self.gf*4) #128
+        d4 = conv2d(d3, self.gf*8) #256 each image will be 64*64
+        # d5 = conv2d(d4, self.gf*8)
+        # d6 = conv2d(d5, self.gf*8)
+        # d7 = conv2d(d6, self.gf*8)
         # Upsampling
-        u1 = deconv2d(d7, d6, self.gf*8)
-        u2 = deconv2d(u1, d5, self.gf*8)
-        u3 = deconv2d(u2, d4, self.gf*8)
-        u4 = deconv2d(u3, d3, self.gf*8)
+        # u1 = deconv2d(d7, d6, self.gf*8)
+        # u2 = deconv2d(u1, d5, self.gf*8)
+        # u3 = deconv2d(u2, d4, self.gf*8)
+        u4 = deconv2d(d4, d3, self.gf*8)
         u5 = deconv2d(u4, d2, self.gf*4)
         u6 = deconv2d(u5, d1, self.gf*2)
         u7 = UpSampling2D(size=2)(u6)
@@ -153,7 +153,7 @@ class Pix2Pix():
                 g_loss = self.combined.train_on_batch([imgs_A, imgs_B], [valid, imgs_A])
                 elapsed_time = datetime.datetime.now() - start_time
                 # Plot the progress
-                with open("training2.txt", "a") as myfile:
+                with open("training3_nov25th.txt", "a") as myfile:
                     myfile.write("[Epoch %d/%d] [Batch %d/%d] [D loss: %f, acc: %3d%%] [G loss: %f] time: %s \n" % (epoch, epochs,
                                                                         batch_i, self.data_loader.n_batches,
                                                                         d_loss[0], 100*d_loss[1],

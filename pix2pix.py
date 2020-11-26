@@ -3,7 +3,7 @@ import scipy
 import tensorflow as tf
 from keras.datasets import mnist
 from keras_contrib.layers.normalization.instancenormalization import InstanceNormalization
-from keras.layers import Input, Dense, Reshape, Flatten, Dropout, Concatenate
+from keras.layers import Input, Dense, Reshape, Flatten, Dropout, Concatenate, Conv2DTranspose
 from keras.layers import BatchNormalization, Activation, ZeroPadding2D
 from keras.layers.advanced_activations import LeakyReLU
 from keras.layers.convolutional import UpSampling2D, Conv2D
@@ -35,8 +35,8 @@ class Pix2Pix():
         patch = int(self.img_rows / 2**4)
         self.disc_patch = (patch, patch, 1)
         # Number of filters in the first layer of G and D
-        self.gf = 32
-        self.df = 32
+        self.gf = 16
+        self.df = 16
         optimizer = Adam(0.01, 0.5)
         # Build and compile the discriminator
         self.discriminator = self.build_discriminator()
@@ -74,20 +74,22 @@ class Pix2Pix():
             return d
         def deconv2d(layer_input, skip_input, filters, f_size=5, dropout_rate=0):
             """Layers used during upsampling"""
-            u = UpSampling2D(size=2)(layer_input)
-            u = Conv2D(filters, kernel_size=f_size, strides=1, padding='same', activation='relu')(u)
+            u = Conv2DTranspose(filters, kernel_size=f_size, padding='SAME', activation='relu', strides=2, 
+            kernel_initializer=tf.keras.initializers.RandomNormal(stddev=0.1))(layer_input)
+            # u = UpSampling2D(size=2)(layer_input)
+            # u = Conv2D(filters, kernel_size=f_size, strides=1, padding='same', activation='relu')(u)
             if dropout_rate:
                 u = Dropout(dropout_rate)(u)
             u = BatchNormalization(momentum=0.8)(u)
-            u = Concatenate()([u, skip_input])
+            #u = Concatenate()([u, skip_input])
             return u
         # Image input
         d0 = Input(shape=self.img_shape)
         # Downsampling
         d1 = conv2d(d0, self.gf, bn=False)
-        d2 = conv2d(d1, self.gf*2) #62
-        d3 = conv2d(d2, self.gf*4) #128
-        d4 = conv2d(d3, self.gf*8) #256 each image will be 64*64
+        d2 = conv2d(d1, self.gf*2) #32
+        d3 = conv2d(d2, self.gf*4) #64
+        #d4 = conv2d(d3, self.gf*8) #128 
         # d5 = conv2d(d4, self.gf*8)
         # d6 = conv2d(d5, self.gf*8)
         # d7 = conv2d(d6, self.gf*8)
@@ -95,8 +97,8 @@ class Pix2Pix():
         # u1 = deconv2d(d7, d6, self.gf*8)
         # u2 = deconv2d(u1, d5, self.gf*8)
         # u3 = deconv2d(u2, d4, self.gf*8)
-        u4 = deconv2d(d4, d3, self.gf*8)
-        u5 = deconv2d(u4, d2, self.gf*4)
+        #u4 = deconv2d(d4, d3, self.gf*8)
+        u5 = deconv2d(d3, d2, self.gf*4)
         u6 = deconv2d(u5, d1, self.gf*2)
         u7 = UpSampling2D(size=2)(u6)
         output_img = Conv2D(self.channels, kernel_size=4, strides=1, padding='same', activation='tanh')(u7)
@@ -140,7 +142,7 @@ class Pix2Pix():
                         org_data_right = org_data[:, self.img_cols:,:]
                         combined_out_img = np.concatenate((org_data_left,org_data_right, gen_output_img), 1)
                         print(imgpaths[im])
-                        cv2.imwrite("/home/nasheath_ahmed/X-RayShadowRemovalAndClassification/generated_images_new1/" + str(epoch) + "_" + str(batch_i) + "_" + imgpaths[im].split("/")[-1], combined_out_img)
+                        cv2.imwrite("/home/nasheath_ahmed/X-RayShadowRemovalAndClassification/generated_images_3/" + str(epoch) + "_" + str(batch_i) + "_" + imgpaths[im].split("/")[-1], combined_out_img)
                         break
                 # Train the discriminators (original images = real / generated = Fake)
                 d_loss_real = self.discriminator.train_on_batch([imgs_A, imgs_B], valid)
@@ -153,7 +155,7 @@ class Pix2Pix():
                 g_loss = self.combined.train_on_batch([imgs_A, imgs_B], [valid, imgs_A])
                 elapsed_time = datetime.datetime.now() - start_time
                 # Plot the progress
-                with open("training3_nov25th.txt", "a") as myfile:
+                with open("training3_nov26th.txt", "a") as myfile:
                     myfile.write("[Epoch %d/%d] [Batch %d/%d] [D loss: %f, acc: %3d%%] [G loss: %f] time: %s \n" % (epoch, epochs,
                                                                         batch_i, self.data_loader.n_batches,
                                                                         d_loss[0], 100*d_loss[1],
@@ -186,6 +188,7 @@ class Pix2Pix():
                 cnt += 1
         fig.savefig("sampled_images/%s/%d_%d.png" % (self.dataset_name, epoch, batch_i))
         plt.close()
+
 if __name__ == '__main__':
     gan = Pix2Pix()
     gan.train(epochs=25, batch_size=4, sample_interval=200)

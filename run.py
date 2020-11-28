@@ -3,7 +3,9 @@ import argparse
 import tensorflow as tf
 from tensorflow import keras
 from tensorflow.keras import layers
-# from your_model import YourModel
+from tensorflow.keras.metrics import AUC
+
+from model import ChestClassModel
 # import hyperparameters as hp
 from classificationData import Datasets
 # from tensorboard_utils import ImageLabelingLogger, ConfusionMatrixLogger
@@ -41,8 +43,8 @@ def train(model, datasets, checkpoint_path):
         tf.keras.callbacks.ModelCheckpoint(
             filepath=checkpoint_path + \
                     "weights.e{epoch:02d}-" + \
-                    "acc{val_sparse_categorical_accuracy:.4f}.h5",
-            monitor='val_sparse_categorical_accuracy',
+                    "auc{val_auc:.4f}.h5",
+            monitor='val_auc',
             save_best_only=True,
             save_weights_only=True),
         tf.keras.callbacks.TensorBoard(
@@ -59,7 +61,7 @@ def train(model, datasets, checkpoint_path):
     model.fit(
         x=datasets.train_data,
         validation_data=datasets.test_data,
-        epochs=10,
+        epochs=50,
         batch_size=None,
         callbacks=callback_list,
     )
@@ -79,61 +81,28 @@ def main():
 
     datasets = Datasets('project_data/classificationProcessed')
 
-    convolutionBase = tf.keras.applications.ResNet50(
-        include_top=False, 
-        weights='imagenet', 
-        input_shape=(1024, 1024, 3), 
-        pooling=None)
+    model = ChestClassModel()
+    model(tf.keras.Input(shape=(512, 512, 3)))
+    checkpoint_path = "./classificationWeights2/"
 
-    # convolutionBase.trainable = True
-    # set_trainable = False
-    # for layer in convolutionBase.layers:
-    #     print(layer.name)
-    #     if layer.name == 'conv5_block1_1_conv':
-    #         set_trainable = True
-    #         layer.trainable = set_trainable
-    #     else:
-    #         layer.trainable = set_trainable
-
-    model = tf.keras.Sequential(
-        [
-            convolutionBase
-            # tf.keras.layers.Flatten(),
-            # tf.keras.layers.Dense(1024, activation="relu", name="layer1"),
-            # tf.keras.layers.Dense(512, activation="relu", name="layer2"),
-            # tf.keras.layers.Dense(128, activation="relu", name="layer3"),
-            # tf.keras.layers.Dense(9, name="layer4")
-        ]
-    )
-    model.add(keras.layers.Flatten())
-    # model.add(keras.layers.Dense(1024, activation="relu"))
-    # model.add(keras.layers.Dense(512, activation="relu"))
-    model.add(keras.layers.Dense(128, activation="relu"))
-    model.add(keras.layers.Dense(9, activation='softmax'))
-
-
-    model(tf.keras.Input(shape=(1024, 1024, 3)))
-    checkpoint_path = "./classificationWeights/"
     print(model.summary())
 
-    # if ARGS.load_checkpoint is not None:
-    #     model.load_weights(ARGS.load_checkpoint)
+    if ARGS.load_checkpoint is not None:
+        model.load_weights(ARGS.load_checkpoint)
 
     # Compile model graph
-    optimizer = tf.keras.optimizers.SGD(learning_rate=0.001)
+    optimizer = tf.keras.optimizers.Adam(learning_rate=0.00001)
     #changed from sparse_categorical 
     model.compile(
         optimizer=optimizer,
         loss="categorical_crossentropy",
-        metrics=["categorical_accuracy"])
+        metrics=[AUC(multi_label=True), "acc", "binary_accuracy"])
 
     if ARGS.evaluate:
         test(model, datasets.test_data)
     else:
         train(model, datasets, checkpoint_path)
-        convolutionBase.trainable = True
-        train(model, datasets, checkpoint_path)
-
+    model.save_weights('./classificationWeights2/allWeights.h5')
 # Make arguments global
 ARGS = parse_args()
 

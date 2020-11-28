@@ -1,18 +1,18 @@
 import tensorflow as tf
-import hyperparameters as hp
+# import hyperparameters as hp
 from tensorflow.keras.layers import \
         Conv2D, MaxPool2D, Dropout, Flatten, Dense
 
-class YourModel(tf.keras.Model):
+class ChestClassModel(tf.keras.Model):
     """ Your own neural network model. """
 
     def __init__(self):
-        super(YourModel, self).__init__()
+        super(ChestClassModel, self).__init__()
 
-        # Optimizer
-        self.optimizer = tf.keras.optimizers.RMSprop(
-            learning_rate=.001,
-            momentum=hp.momentum)
+        # # Optimizer
+        # self.optimizer = tf.keras.optimizers.RMSprop(
+        #     learning_rate=.001,
+        #     momentum=hp.momentum)
 
         # TODO: Build your own convolutional neural network, using Dropout at
         #       least once. The input image will be passed through each Keras
@@ -46,24 +46,18 @@ class YourModel(tf.keras.Model):
         #
         # ====================================================================
 
+        convolutionBase = tf.keras.applications.ResNet50(
+            include_top=False, 
+            weights='imagenet', 
+            input_shape=(512, 512, 3), 
+            pooling=None)
+
         self.architecture = [
-             # Block 1
-            Conv2D(32, 3, 1, padding="same", activation="relu", name="block1_conv1"),
-            Conv2D(32, 3, 1, padding="same", activation="relu", name="block1_conv2"),
-            MaxPool2D(4, name="block1_pool"),
-            # Block 2
-            Conv2D(64, 3, 1, padding="same", activation="relu", name="block2_conv1"),
-            Conv2D(64, 3, 1, padding="same", activation="relu", name="block2_conv2"),
-            MaxPool2D(2, name="block2_pool"),
-            # Block 3
-            Conv2D(128, 3, 1, padding="same", activation="relu", name="block3_conv1"),
-            Conv2D(128, 3, 1, padding="same", activation="relu", name="block3_conv2"),
-            Conv2D(128, 3, 1, padding="same", activation="relu", name="block3_conv3"),
-            MaxPool2D(2, name="block3_pool"),
-            Dropout(0.65),
+            convolutionBase,
             Flatten(),
-            Dense(128, activation="relu"),
-            Dense(15, activation="softmax")
+            Dense(128, activation='relu'),
+            Dropout(.25),
+            Dense(9, activation='softmax'),
         ]
 
         # ====================================================================
@@ -76,9 +70,9 @@ class YourModel(tf.keras.Model):
 
         return img
 
-    @staticmethod
-    def loss_fn(labels, predictions):
-        """ Loss function for the model. """
+    # @staticmethod
+    # def loss_fn(labels, predictions):
+    #     """ Loss function for the model. """
 
-        return tf.keras.losses.sparse_categorical_crossentropy(
-            labels, predictions, from_logits=False)
+    #     return tf.keras.losses.sparse_categorical_crossentropy(
+    #         labels, predictions, from_logits=False)

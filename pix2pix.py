@@ -113,7 +113,7 @@ class Pix2Pix():
                 # ---------------------
                 # Condition on B and generate a translated version
                 fake_A = self.generator.predict(imgs_B)
-                if batch_i % 200 == 0:
+                if batch_i % 50 == 0:
                     for im in range(len(fake_A)):
                         gen_output_img = (fake_A[im] + 1) * 127.5
                         org_data = cv2.imread(imgpaths[im])
@@ -190,18 +190,21 @@ class Decoder(tf.keras.layers.Layer):
     def __init__(self):
         super(Decoder, self).__init__()
         
-        self.decoder_deconv_1 = tf.keras.layers.Conv2DTranspose(32, 5, strides=(2,2), 
+        self.decoder_deconv_1 = tf.keras.layers.Conv2D(32, 5, strides=(1,1), 
             padding='SAME', activation='relu', kernel_initializer=tf.initializers.random_normal(stddev=0.02))
-        self.decoder_deconv_2 = tf.keras.layers.Conv2DTranspose(16, 5, strides=(2,2), 
+        self.decoder_deconv_2 = tf.keras.layers.Conv2D(16, 5, strides=(1,1), 
             padding='SAME', activation='relu', kernel_initializer=tf.initializers.random_normal(stddev=0.02))
-        self.decoder_deconv_3 = tf.keras.layers.Conv2DTranspose(3, 5, strides=(2,2), 
+        self.decoder_deconv_3 = tf.keras.layers.Conv2D(3, 5, strides=(1,1), 
             padding='SAME', activation='tanh', kernel_initializer=tf.initializers.random_normal(stddev=0.1))
 
     @tf.function
     def call(self, encoder_output):
         
-        data = self.decoder_deconv_1(encoder_output)
+        data = tf.keras.layers.UpSampling2D(size=2, interpolation='nearest')(encoder_output)
+        data = self.decoder_deconv_1(data)
+        data = tf.keras.layers.UpSampling2D(size=2, interpolation='nearest')(data)
         data = self.decoder_deconv_2(data)
+        data = tf.keras.layers.UpSampling2D(size=2, interpolation='nearest')(data)
         data = self.decoder_deconv_3(data)
         return data
 

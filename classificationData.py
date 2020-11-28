@@ -13,12 +13,12 @@ class Datasets():
     def __init__(self, data_path):
         self.data_path = data_path
         
-        # Dictionaries for (label index) <--> (class name)
-        self.idx_to_class = {}
-        self.class_to_idx = {}
 
         # For storing list of classes
         self.classes = [""] * 9
+
+        self.mean = [0.485, 0.456, 0.406]
+        self.std = [0.229, 0.224, 0.225]
 
         # Setup data generators
         self.train_data = self.get_data(
@@ -28,7 +28,26 @@ class Datasets():
         self.val_data = self.get_data(
             os.path.join(self.data_path, "val/"), False, False)
 
+    
+    def standardize(self, img):
+        """ Function for applying standardization to an input image.
+        Arguments:
+            img - numpy array of shape (image size, image size, 3)
+        Returns:
+            img - numpy array of shape (image size, image size, 3)
+        """
 
+        img = (img - self.mean)/self.std 
+
+        return img
+
+    def preprocess_fn(self, img):
+        """ Preprocess function for ImageDataGenerator. """
+
+        img = img / 255.
+        img = self.standardize(img)
+
+        return img
     def get_data(self, path, shuffle, augment):
         """ Returns an image data generator which can be iterated
         through for images and corresponding class labels.
@@ -55,44 +74,27 @@ class Datasets():
             # ============================================================
 
             data_gen = tf.keras.preprocessing.image.ImageDataGenerator(
+                preprocessing_function=self.preprocess_fn,
                 zoom_range = 0.2,
-                horizontal_flip=True,
-                featurewise_std_normalization=True)
+                horizontal_flip=True)
 
             # ============================================================
         else:
             # Don't modify this
             data_gen = tf.keras.preprocessing.image.ImageDataGenerator(
-               featurewise_std_normalization=True)
+                preprocessing_function=self.preprocess_fn)
 
         # VGG must take images of size 224x224
         img_size = 1024
 
         classes_for_flow = None
 
-        # Make sure all data generators are aligned in label indices
-        if bool(self.idx_to_class):
-            classes_for_flow = self.classes
-
         # Form image data generator from directory structure
         data_gen = data_gen.flow_from_directory(
             path,
-            target_size=(img_size, img_size),
-            class_mode='sparse',
-            batch_size=4,
-            shuffle=shuffle,
-            classes=classes_for_flow)
-
-        # Setup the dictionaries if not already done
-        if not bool(self.idx_to_class):
-            unordered_classes = []
-            for dir_name in os.listdir(path):
-                if os.path.isdir(os.path.join(path, dir_name)):
-                    unordered_classes.append(dir_name)
-
-            for img_class in unordered_classes:
-                self.idx_to_class[data_gen.class_indices[img_class]] = img_class
-                self.class_to_idx[img_class] = int(data_gen.class_indices[img_class])
-                self.classes[int(data_gen.class_indices[img_class])] = img_class
+            target_size=(512, 512),
+            class_mode='categorical',
+            batch_size=5,
+            shuffle=shuffle)
 
         return data_gen

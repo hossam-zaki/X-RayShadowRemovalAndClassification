@@ -70,9 +70,15 @@ class Pix2Pix():
 
         #Loading in the weights here NEED TO DELETE AFTER THE RUN WE DO  TODAY
         #self.combined.load_weights("ganWeights.h5")
-        self.combined.compile(loss=['mse', 'mae'],
+        self.combined.compile(loss=[self.loss_fun],
                               loss_weights=[1, 100],
                               optimizer=optimizer)
+
+    def loss_fun(self, y_true, y_pred):
+        mse = tf.reduce_mean(tf.reduce_mean(tf.math.squared_difference(y_true, y_pred), 1))
+        ssim = tf.reduce_mean(1 - tf.image.ssim(y_true, y_pred, max_val=1, filter_size=5))
+
+        return (.85 * ssim) + (.15 * mse)
 
     def build_generator(self):
         """U-Net Generator"""
@@ -172,9 +178,9 @@ class Pix2Pix():
 class Encoder(tf.keras.layers.Layer):
     def __init__(self):
        super(Encoder, self).__init__()
-       self.encoder_conv_1 = tf.keras.layers.Conv2D(16, 5, strides=(1,1), padding='SAME', activation='relu', kernel_initializer=tf.initializers.random_normal(stddev=0.1))
-       self.encoder_conv_2 = tf.keras.layers.Conv2D(32, 5, strides=(1,1), padding='SAME', activation='relu', kernel_initializer=tf.initializers.random_normal(stddev=0.1))
-       self.encoder_conv_3 = tf.keras.layers.Conv2D(64, 5, strides=(1,1), padding='SAME', activation='relu', kernel_initializer=tf.initializers.random_normal(stddev=0.1))
+       self.encoder_conv_1 = tf.keras.layers.Conv2D(16, 5, strides=(1,1), padding='SAME', activation='relu', kernel_initializer=tf.initializers.random_normal(mean=0.0, stddev=0.02))
+       self.encoder_conv_2 = tf.keras.layers.Conv2D(32, 5, strides=(1,1), padding='SAME', activation='relu', kernel_initializer=tf.initializers.random_normal(mean=0.0, stddev=0.02))
+       self.encoder_conv_3 = tf.keras.layers.Conv2D(64, 5, strides=(1,1), padding='SAME', activation='relu', kernel_initializer=tf.initializers.random_normal(mean=0.0, stddev=0.02))
     
     @tf.function
     def call(self, images):
@@ -191,11 +197,11 @@ class Decoder(tf.keras.layers.Layer):
         super(Decoder, self).__init__()
         
         self.decoder_deconv_1 = tf.keras.layers.Conv2D(32, 5, strides=(1,1), 
-            padding='SAME', activation='relu', kernel_initializer=tf.initializers.random_normal(stddev=0.02))
+            padding='SAME', activation='relu', kernel_initializer=tf.initializers.random_normal(mean=0.0, stddev=0.02))
         self.decoder_deconv_2 = tf.keras.layers.Conv2D(16, 5, strides=(1,1), 
-            padding='SAME', activation='relu', kernel_initializer=tf.initializers.random_normal(stddev=0.02))
+            padding='SAME', activation='relu', kernel_initializer=tf.initializers.random_normal(mean=0.0, stddev=0.02))
         self.decoder_deconv_3 = tf.keras.layers.Conv2D(3, 5, strides=(1,1), 
-            padding='SAME', activation='tanh', kernel_initializer=tf.initializers.random_normal(stddev=0.1))
+            padding='SAME', activation='tanh', kernel_initializer=tf.initializers.random_normal(mean=0.0, stddev=0.02))
 
     @tf.function
     def call(self, encoder_output):

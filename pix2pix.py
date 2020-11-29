@@ -35,9 +35,10 @@ class Pix2Pix():
         patch = int(self.img_rows / 2**4)
         self.disc_patch = (patch, patch, 1)
         # Number of filters in the first layer of G and D
+        self.lr = .001
         self.gf = 32
         self.df = 32
-        optimizer = Adam(0.0001, 0.5)
+        optimizer = Adam(self.lr, 0.5)
         # Build and compile the discriminator
         self.discriminator = self.build_discriminator()
         self.discriminator.compile(loss='mse',
@@ -65,14 +66,14 @@ class Pix2Pix():
                               optimizer=optimizer)
     def build_generator(self):
         """U-Net Generator"""
-        def conv2d(layer_input, filters, f_size=4, bn=True):
+        def conv2d(layer_input, filters, f_size=5, bn=True):
             """Layers used during downsampling"""
             d = Conv2D(filters, kernel_size=f_size, strides=2, padding='same')(layer_input)
             d = LeakyReLU(alpha=0.2)(d)
             if bn:
                 d = BatchNormalization(momentum=0.8)(d)
             return d
-        def deconv2d(layer_input, skip_input, filters, f_size=4, dropout_rate=0):
+        def deconv2d(layer_input, skip_input, filters, f_size=5, dropout_rate=0):
             """Layers used during upsampling"""
             u = UpSampling2D(size=2)(layer_input)
             u = Conv2D(filters, kernel_size=f_size, strides=1, padding='same', activation='relu')(u)
@@ -102,7 +103,7 @@ class Pix2Pix():
         output_img = Conv2D(self.channels, kernel_size=4, strides=1, padding='same', activation='tanh')(u7)
         return Model(d0, output_img)
     def build_discriminator(self):
-        def d_layer(layer_input, filters, f_size=4, bn=True):
+        def d_layer(layer_input, filters, f_size=5, bn=True):
             """Discriminator layer"""
             d = Conv2D(filters, kernel_size=f_size, strides=2, padding='same')(layer_input)
             d = LeakyReLU(alpha=0.2)(d)
@@ -167,6 +168,20 @@ class Pix2Pix():
                 # If at save interval => save generated image samples
                 if batch_i % sample_interval == 0:
                     self.sample_images(epoch, batch_i)
+            if (epoch + 1) % 25 == 0:
+                self.lr = self.lr/10
+                optimizer = Adam(self.lr, 0.5)
+                self.discriminator.compile(loss='mse',
+                    optimizer=optimizer,
+                    metrics=['accuracy'])
+                self.combined.compile(loss=['mse', 'mae'],
+                              loss_weights=[1, 100],
+                              optimizer=optimizer)
+                self.combined.save_weights(f"50epochRun/ganWeights{epoch}.h5")
+                self.generator.save_weights(f"50epochRun/generatorWeights{epoch}.h5")
+                self.discriminator.save_weights(f"50epochRun/discriminatorWeights{epoch}.h5")
+                print(f"Learning rate is now --> {self.lr}")
+                
     def sample_images(self, epoch, batch_i):
         os.makedirs('sampled_images/%s' % self.dataset_name, exist_ok=True)
         r, c = 3, 3
@@ -191,7 +206,7 @@ if __name__ == '__main__':
     gan.combined.load_weights("weights_run_2/ganWeights.h5")
     gan.generator.load_weights("weights_run_2/generatorWeights.h5")
     gan.discriminator.load_weights("weights_run_2/discriminatorWeights.h5")
-    gan.train(epochs=25, batch_size=4, sample_interval=200)
+    gan.train(epochs=50, batch_size=4, sample_interval=200)
     gan.combined.save_weights("ganWeights.h5")
     gan.generator.save_weights("generatorWeights.h5")
     gan.discriminator.save_weights("discriminatorWeights.h5")

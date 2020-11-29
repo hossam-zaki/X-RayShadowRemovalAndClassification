@@ -11,6 +11,5 @@ weights_run_*/
 weight_run_3/
 logs/
 classificationoutput.txt
-classificationWeights*/
+classificationWeights/
 *.h5
-

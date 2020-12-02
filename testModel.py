@@ -23,13 +23,15 @@ from pix2pix import Pix2Pix
 
 gan = Pix2Pix()
 
-gan.combined.load_weights("weight_run_3/ganWeights.h5")
-gan.generator.load_weights("weight_run_3/generatorWeights.h5")
-gan.discriminator.load_weights("weight_run_3/discriminatorWeights.h5")
+gan.combined.load_weights("bestWeights/ganWeights.h5")
+gan.generator.load_weights("bestWeights/generatorWeights.h5")
+gan.discriminator.load_weights("bestWeights/discriminatorWeights.h5")
 
-# fake_A = gan.generator.predict(tf.expand_dims(cv2.imread('../data/augmented/augmented/source/0_1.png'), axis=0))
-# cv2.imwrite("/home/nasheath_ahmed/X-RayShadowRemovalAndClassification/test.png", fake_A)
-# quit()
+fake_A = gan.generator.predict(np.expand_dims((cv2.imread('../data/augmented/augmented/source/0_3.png')/127.5)-1, axis=0))
+gen_output_img = (fake_A +1) * 127.5
+print(np.squeeze(gen_output_img).shape)
+cv2.imwrite("/home/nasheath_ahmed/X-RayShadowRemovalAndClassification/test.png", np.squeeze(gen_output_img))
+quit()
 data_loader = DataLoader(dataset_name="bone_supression_data",
                                       img_res=(1024, 1024))
 for batch_i, (imgs_A, imgs_B, imgpaths) in enumerate(data_loader.load_batch(1, is_testing=True)):
@@ -46,6 +48,6 @@ for batch_i, (imgs_A, imgs_B, imgpaths) in enumerate(data_loader.load_batch(1, i
         org_data_right = org_data[:, gan.img_cols:,:]
         combined_out_img = np.concatenate((org_data_left,org_data_right, gen_output_img), 1)
         print(imgpaths[im])
-        cv2.imwrite("/home/nasheath_ahmed/X-RayShadowRemovalAndClassification/validated_images_new_1/" + imgpaths[im].split("/")[-1], combined_out_img)
+        cv2.imwrite("/home/nasheath_ahmed/X-RayShadowRemovalAndClassification/validated_images_OG_continued/" + imgpaths[im].split("/")[-1], combined_out_img)
         break
 

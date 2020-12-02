@@ -17,28 +17,27 @@ import numpy as np
 import os
 import cv2
 import smtplib, ssl
-
-#notify me when of training progress
+import argparse
+from argparse import ArgumentParser
 
 class Pix2Pix():
-    def __init__(self):
+    def __init__(self, pathToDataset, lr):
         # Input shape
         self.img_rows = 1024
         self.img_cols = 1024
         self.channels = 3
         self.img_shape = (self.img_rows, self.img_cols, self.channels)
         # Configure data loader
-        self.dataset_name = 'bone_supression_data'
+        self.dataset_name = pathToDataset
         self.data_loader = DataLoader(dataset_name=self.dataset_name,
                                       img_res=(self.img_rows, self.img_cols))
         # Calculate output shape of D (PatchGAN)
         patch = int(self.img_rows / 2**4)
         self.disc_patch = (patch, patch, 1)
         # Number of filters in the first layer of G and D
-        self.lr = .001
         self.gf = 32
         self.df = 32
-        optimizer = Adam(self.lr, 0.5)
+        optimizer = Adam(lr, 0.5)
         # Build and compile the discriminator
         self.discriminator = self.build_discriminator()
         self.discriminator.compile(loss='mse',
@@ -66,14 +65,14 @@ class Pix2Pix():
                               optimizer=optimizer)
     def build_generator(self):
         """U-Net Generator"""
-        def conv2d(layer_input, filters, f_size=5, bn=True):
+        def conv2d(layer_input, filters, f_size=4, bn=True):
             """Layers used during downsampling"""
             d = Conv2D(filters, kernel_size=f_size, strides=2, padding='same')(layer_input)
             d = LeakyReLU(alpha=0.2)(d)
             if bn:
                 d = BatchNormalization(momentum=0.8)(d)
             return d
-        def deconv2d(layer_input, skip_input, filters, f_size=5, dropout_rate=0):
+        def deconv2d(layer_input, skip_input, filters, f_size=4, dropout_rate=0):
             """Layers used during upsampling"""
             u = UpSampling2D(size=2)(layer_input)
             u = Conv2D(filters, kernel_size=f_size, strides=1, padding='same', activation='relu')(u)
@@ -91,9 +90,7 @@ class Pix2Pix():
         d4 = conv2d(d3, self.gf*4) #128
         d5 = conv2d(d4, self.gf*4)
         d6 = conv2d(d5, self.gf*8)
-        # d7 = conv2d(d6, self.gf*8)
         # Upsampling
-        # u1 = deconv2d(d7, d6, self.gf*8)
         u2 = deconv2d(d6, d5, self.gf*8)
         u3 = deconv2d(u2, d4, self.gf*4)
         u4 = deconv2d(u3, d3, self.gf*4)
@@ -103,7 +100,7 @@ class Pix2Pix():
         output_img = Conv2D(self.channels, kernel_size=4, strides=1, padding='same', activation='tanh')(u7)
         return Model(d0, output_img)
     def build_discriminator(self):
-        def d_layer(layer_input, filters, f_size=5, bn=True):
+        def d_layer(layer_input, filters, f_size=4, bn=True):
             """Discriminator layer"""
             d = Conv2D(filters, kernel_size=f_size, strides=2, padding='same')(layer_input)
             d = LeakyReLU(alpha=0.2)(d)
@@ -154,7 +151,7 @@ class Pix2Pix():
                 g_loss = self.combined.train_on_batch([imgs_A, imgs_B], [valid, imgs_A])
                 elapsed_time = datetime.datetime.now() - start_time
                 # Plot the progress
-                with open("training1.txt", "a") as myfile:
+                with open("trainingLogs.txt", "a") as myfile:
                     myfile.write("[Epoch %d/%d] [Batch %d/%d] [D loss: %f, acc: %3d%%] [G loss: %f] time: %s \n" % (epoch, epochs,
                                                                         batch_i, self.data_loader.n_batches,
                                                                         d_loss[0], 100*d_loss[1],
@@ -168,20 +165,6 @@ class Pix2Pix():
                 # If at save interval => save generated image samples
                 if batch_i % sample_interval == 0:
                     self.sample_images(epoch, batch_i)
-            if (epoch + 1) % 25 == 0:
-                self.lr = self.lr/10
-                optimizer = Adam(self.lr, 0.5)
-                self.discriminator.compile(loss='mse',
-                    optimizer=optimizer,
-                    metrics=['accuracy'])
-                self.combined.compile(loss=['mse', 'mae'],
-                              loss_weights=[1, 100],
-                              optimizer=optimizer)
-                self.combined.save_weights(f"50epochRun/ganWeights{epoch}.h5")
-                self.generator.save_weights(f"50epochRun/generatorWeights{epoch}.h5")
-                self.discriminator.save_weights(f"50epochRun/discriminatorWeights{epoch}.h5")
-                print(f"Learning rate is now --> {self.lr}")
-                
     def sample_images(self, epoch, batch_i):
         os.makedirs('sampled_images/%s' % self.dataset_name, exist_ok=True)
         r, c = 3, 3
@@ -202,24 +185,24 @@ class Pix2Pix():
         fig.savefig("sampled_images/%s/%d_%d.png" % (self.dataset_name, epoch, batch_i))
         plt.close()
 if __name__ == '__main__':
-    gan = Pix2Pix()
-    gan.combined.load_weights("weights_run_2/ganWeights.h5")
-    gan.generator.load_weights("weights_run_2/generatorWeights.h5")
-    gan.discriminator.load_weights("weights_run_2/discriminatorWeights.h5")
-    gan.train(epochs=50, batch_size=4, sample_interval=200)
+    parser = ArgumentParser()
+
+    parser.add_argument('--batch',type=int, default=4, required=False)
+    parser.add_argument('--epochs',type=int, default=25, required=False)
+    parser.add_argument('--loadWeights',type=bool, default=False, required=False)
+    parser.add_argument('--pathToWeights',type=str, default='', required=False)
+    parser.add_argument('--pathToData',type=str, default='project_data/bone_suppression_data/', required=True)
+    parser.add_argument('--lr', type=float, default=.001, required=False)
+    config = parser.parse_args()
+
+    gan = Pix2Pix(config.pathToData, config.lr)
+    if config.loadWeights:
+        print("hia")
+        gan.combined.load_weights(f"{config.pathToWeights}/ganWeights.h5")
+        gan.generator.load_weights(f"{config.pathToWeights}/generatorWeights.h5")
+        gan.discriminator.load_weights(f"{config.pathToWeights}/discriminatorWeights.h5")
+    gan.train(epochs=config.epochs, batch_size=config.batch, sample_interval=200)
     gan.combined.save_weights("ganWeights.h5")
     gan.generator.save_weights("generatorWeights.h5")
     gan.discriminator.save_weights("discriminatorWeights.h5")
-    receiver_emails = ['hossam_zaki@brown.edu', 'mohamad_abouelafia@brown.edu', 'nasheath_ahmed@brown.edu', 'andrew_aoun@brown.edu']
-    for bozo in receiver_emails:
-        port = 465
-        smtp_server = "smtp.gmail.com"
-        sender_email = "nasheathpython@gmail.com" # Enter your address
-        receiver_email = bozo # Enter receiver address
-        password = "nasheath24!"
-        message = 'Subject: {}\n\n{}'.format("whaddup bimbos", "This message is sent from Python saying your training is finished! aHaHa.")
 
-        context = ssl.create_default_context()
-        with smtplib.SMTP_SSL(smtp_server, port, context=context) as server:
-            server.login(sender_email, password)
-            server.sendmail(sender_email, receiver_email, message)

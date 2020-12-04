@@ -95,6 +95,7 @@ class Datasets():
             target_size=(512, 512),
             class_mode='categorical',
             batch_size=5,
+            # color_mode= 'grayscale',
             shuffle=shuffle)
 
         return data_gen

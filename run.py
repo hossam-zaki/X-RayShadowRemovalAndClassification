@@ -40,18 +40,18 @@ def train(model, datasets, checkpoint_path):
 
     # Keras callbacks for training
     callback_list = [
-        tf.keras.callbacks.ModelCheckpoint(
+         tf.keras.callbacks.ModelCheckpoint(
             filepath=checkpoint_path + \
                     "weights.e{epoch:02d}-" + \
-                    "auc{val_auc:.4f}.h5",
-            monitor='val_auc',
+                    "acc{val_acc:.4f}.h5",
+            monitor='val_acc',
             save_best_only=True,
             save_weights_only=True),
         tf.keras.callbacks.TensorBoard(
             update_freq='batch',
             profile_batch=0),
         tf.keras.callbacks.ReduceLROnPlateau(
-            monitor='val_loss', 
+            monitor='loss', 
             patience=2, 
             mode='min')
     ]
@@ -83,7 +83,7 @@ def main():
 
     model = ChestClassModel()
     model(tf.keras.Input(shape=(512, 512, 3)))
-    checkpoint_path = "./classificationWeights2/"
+    checkpoint_path = "./classificationWeights4/"
 
     print(model.summary())
 
@@ -102,7 +102,7 @@ def main():
         test(model, datasets.test_data)
     else:
         train(model, datasets, checkpoint_path)
-    model.save_weights('./classificationWeights2/allWeights.h5')
+    model.save_weights('./classificationWeights4/allWeights.h5')
 # Make arguments global
 ARGS = parse_args()
 

@@ -21,16 +21,21 @@ import smtplib, ssl
 
 from pix2pix import Pix2Pix
 
-gan = Pix2Pix()
+gan = Pix2Pix('',0 )
 
 gan.combined.load_weights("bestWeights/ganWeights.h5")
 gan.generator.load_weights("bestWeights/generatorWeights.h5")
 gan.discriminator.load_weights("bestWeights/discriminatorWeights.h5")
 
-fake_A = gan.generator.predict(np.expand_dims((cv2.imread('../data/augmented/augmented/source/0_3.png')/127.5)-1, axis=0))
+
+image = cv2.imread('./project_data/classificationProcessed/val/Pleural_Thickening/00002123_000.png')/127.5 -1
+print(image.shape)
+gray = cv2.cvtColor(np.float32(image), cv2.COLOR_BGR2GRAY)
+fake_A = gan.generator.predict(np.expand_dims(gray, axis=0))
 gen_output_img = (fake_A +1) * 127.5
 print(np.squeeze(gen_output_img).shape)
-cv2.imwrite("/home/nasheath_ahmed/X-RayShadowRemovalAndClassification/test.png", np.squeeze(gen_output_img))
+cv2.imwrite("test_example.png", np.squeeze(gray))
+cv2.imwrite("test.png", np.squeeze(gen_output_img))
 quit()
 data_loader = DataLoader(dataset_name="bone_supression_data",
                                       img_res=(1024, 1024))

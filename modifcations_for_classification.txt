@@ -8,5 +8,9 @@ Changed the optimizer from Adam with lr = 0.001 to SGD with lr = 0.001
 Changed the loss from sparse_categorical_cross_entropy to categorical_cross_entropy
 Added mean and std of imagenet and applied to every image
 
+November 30th
+
+Making new classificationWeights3 folder
+Increased dropout to .4, right after the flatten
 
 

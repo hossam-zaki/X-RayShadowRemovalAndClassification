@@ -123,18 +123,20 @@ class Encoder(tf.keras.layers.Layer):
     def __init__(self):
        super(Encoder, self).__init__()
        self.encoder_conv_1 = tf.keras.layers.Conv2D(16,3,padding='same', strides= (2,2), kernel_initializer =tf.keras.initializers.RandomNormal(
-    mean=0.0, stddev=0.1, seed=None))
+    mean=0.0, stddev=0.2, seed=None))
        self.encoder_conv_2 = tf.keras.layers.Conv2D(32,3,padding='same', strides= (2,2), kernel_initializer =tf.keras.initializers.RandomNormal(
-    mean=0.0, stddev=0.1, seed=None))
+    mean=0.0, stddev=0.2, seed=None))
        self.encoder_conv_3 = tf.keras.layers.Conv2D(64,3,padding='same', strides= (2,2), kernel_initializer =tf.keras.initializers.RandomNormal(
-    mean=0.0, stddev=0.1, seed=None))
-    
+    mean=0.0, stddev=0.2, seed=None))
+
     @tf.function
     def call(self, images):
       layer1 = self.encoder_conv_1(images)
       layer1= tf.nn.leaky_relu(layer1, alpha=0.2)
+
       layer2 = self.encoder_conv_2(layer1)
       layer2= tf.nn.leaky_relu(layer2, alpha=0.2)
+
       layer3 = self.encoder_conv_3(layer2)
       layer3= tf.nn.leaky_relu(layer3, alpha=0.2)
       return layer3
@@ -144,28 +146,27 @@ class Decoder(tf.keras.layers.Layer):
         super(Decoder, self).__init__()
         
         self.decoder_deconv_1 = tf.keras.layers.Conv2D(32,3,padding='same', strides= (1,1), kernel_initializer =tf.keras.initializers.RandomNormal(
-    mean=0.0, stddev=0.1, seed=None))
+    mean=0.0, stddev=0.2, seed=None))
 
         self.decoder_deconv_2 = tf.keras.layers.Conv2D(16,3,padding='same', strides= (1,1), kernel_initializer =tf.keras.initializers.RandomNormal(
-    mean=0.0, stddev=0.1, seed=None))
+    mean=0.0, stddev=0.2, seed=None))
         self.decoder_deconv_3 = tf.keras.layers.Conv2D(3,3,padding='same', strides= (1,1), kernel_initializer =tf.keras.initializers.RandomNormal(
-    mean=0.0, stddev=0.1, seed=None))
+    mean=0.0, stddev=0.2, seed=None))
         
     @tf.function
     def call(self, encoder_output):
-        batchSz = tf.shape(encoder_output)[0]
-        # TODO fill in the first layer of convolution transpose
-        # hint: use tf.stack when creating the output shape parameter
-        #       in conv2d_transpose
+
         data = tf.keras.layers.UpSampling2D(size=(2,2), interpolation='nearest')(encoder_output)
         data = self.decoder_deconv_1(data)
         data = tf.nn.leaky_relu(data, alpha=0.2)
+
         data = tf.keras.layers.UpSampling2D(size=(2,2), interpolation='nearest')(data)
         data = self.decoder_deconv_2(data)
         data = tf.nn.leaky_relu(data, alpha=0.2)
+
         data = tf.keras.layers.UpSampling2D(size=(2,2), interpolation='nearest')(data)
         data = self.decoder_deconv_3(data)
-        results= tf.nn.leaky_relu(data, alpha=0.2)
+        results = tf.nn.leaky_relu(data, alpha=0.2)
         return results
 
 class Autoencoder(tf.keras.Model):
@@ -229,23 +230,24 @@ if __name__ == '__main__':
     data_loader = DataLoader(dataset_name='project_data/bone_supression_data',
                                       img_res=(1024, 1024))
     model = Autoencoder()
-    #model.built = True
-    optimizer = tf.keras.optimizers.Adam(learning_rate=0.001)
+    model.built = True
+    optimizer = tf.keras.optimizers.Adam(learning_rate=0.0001) #initial learning rate is .001
     epochs = 50
     batch_size = 4
-    #train(model, optimizer, np.zeros((1, 1024, 1024, 3)), np.zeros((1, 1024, 1024, 3)))
-    #model.load_weights('autoencoderWeights.h5')
+    train(model, optimizer, np.zeros((1, 1024, 1024, 3)), np.zeros((1, 1024, 1024, 3)), [])
+    model.load_weights('autoencoderWeights/23_27.40587615966797_autoencoderWeights.h5')
 
     with open('trainingAutoencoder.txt', 'w+') as f:
         for epoch in range(epochs):
             f.write(f"Epoch {epoch}/{epochs}")
             if epoch + 1 % 25 == 0:
+                print("in")
                 optimizer = tf.keras.optimizers.Adam(learning_rate=0.0001)
             totalLoss = []
             for batch_i, (imgs_A, imgs_B, imgpaths) in enumerate(data_loader.load_batch(batch_size)):
 
                 fake_A, totalLoss = train(model, optimizer, imgs_B, imgs_A, totalLoss)
-                if batch_i % 5 == 0:
+                if batch_i % 50 == 0:
                     for im in range(len(fake_A)):
                         gen_output_img = (fake_A[im] + 1) * 127.5
                         org_data = cv2.imread(imgpaths[im])
@@ -254,12 +256,12 @@ if __name__ == '__main__':
                         org_data_right = org_data[:, 1024:,:]
                         combined_out_img = np.concatenate((org_data_left,org_data_right, gen_output_img), 1)
                         print(imgpaths[im])
-                        cv2.imwrite("/home/nasheath_ahmed/X-RayShadowRemovalAndClassification/autoencoder/" + str(epoch) + "_" + str(batch_i) + "_" + imgpaths[im].split("/")[-1], combined_out_img)
+                        cv2.imwrite("/home/nasheath_ahmed/X-RayShadowRemovalAndClassification/autoencoderContinued/" + str(epoch) + "_" + str(batch_i) + "_" + imgpaths[im].split("/")[-1], combined_out_img)
                         break
             total_loss = np.sum(totalLoss)
             print(f"Loss of epoch: {totalLoss}")
-            model.save_weights(f'autoencoderWeights/{epoch}_{total_loss}_autoencoderWeights.h5')
-            f.write(f"Epoch {epoch} loss : {total_loss}")
+            model.save_weights(f'autoencoderWeights/{epoch + 25}_{total_loss}_autoencoderWeights.h5')
+            f.write(f"Epoch {epoch + 25} loss : {total_loss}")
     
     
     

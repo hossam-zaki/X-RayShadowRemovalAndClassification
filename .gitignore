@@ -12,3 +12,7 @@ weight_run_3/
 logs/
 classificationoutput.txt
 classificationWeights*/
+autoencoder/*
+autoencoderWeights/
+autoencoderContinued/
+autoencoder_images/

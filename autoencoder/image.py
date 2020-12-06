@@ -26,13 +26,13 @@ from pix2pix import Pix2Pix
 autoencoder = Autoencoder()
 
 autoencoder.predict(np.zeros((1, 1024, 1024, 3)))
-autoencoder.load_weights('{insert weights here}')
+autoencoder.load_weights('autoencoderWeights/74_26.0347843170166_autoencoderWeights.h5')
 
 tree_source = scantree('../project_data/classificationProcessed/', RecursionFilter(match=['*.png']))
 all_images =  [path.real for path in tree_source.filepaths()]
 
 #brightens initial image
-if not os.path.exists('./project_data/classification_suppressed'):
+if not os.path.exists('../project_data/classification_suppressed'):
     os.mkdir('../project_data/classification_suppressed')
     os.mkdir('../project_data/classification_suppressed/train')
     os.mkdir('../project_data/classification_suppressed/test')

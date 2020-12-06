@@ -22,103 +22,6 @@ from argparse import ArgumentParser
 
 
 
-# class Encoder(tf.keras.layers.Layer):
-#     def __init__(self):
-#         super(Encoder, self).__init__()
-#         self.layer1 = tf.keras.layers.Conv2D(32, kernel_size=5, strides=2, padding='same',kernel_initializer =tf.keras.initializers.RandomNormal(
-#     mean=0.0, stddev=0.1, seed=None
-# ))
-#         self.layer2 = tf.keras.layers.Conv2D(32, kernel_size=5, strides=2, padding='same',kernel_initializer =tf.keras.initializers.RandomNormal(
-#     mean=0.0, stddev=0.1, seed=None
-# ))
-#         self.layer3 = tf.keras.layers.Conv2D(64, kernel_size=5, strides=2, padding='same',kernel_initializer =tf.keras.initializers.RandomNormal(
-#     mean=0.0, stddev=0.1, seed=None
-# ))
-#         self.layer4 = tf.keras.layers.Conv2D(128, kernel_size=5, strides=2, padding='same',kernel_initializer =tf.keras.initializers.RandomNormal(
-#     mean=0.0, stddev=0.1, seed=None
-# ))
-#         self.layer5 = tf.keras.layers.Conv2D(128, kernel_size=5, strides=2, padding='same',kernel_initializer =tf.keras.initializers.RandomNormal(
-#     mean=0.0, stddev=0.1, seed=None
-# ))
-#         self.layer6 = tf.keras.layers.Conv2D(256, kernel_size=5, strides=2, padding='same',kernel_initializer =tf.keras.initializers.RandomNormal(
-#     mean=0.0, stddev=0.1, seed=None
-# ))
-#     # @tf.function
-#     # def conv2d(layer_input, filters, f_size=4, bn=True):
-#     #     d = Conv2D(filters, kernel_size=f_size, strides=2, padding='same')(layer_input)
-#     #     d = LeakyReLU(alpha=0.2)(d)
-#     #     if bn:
-#     #         d = BatchNormalization(momentum=0.8)(d)
-#     #     return d
-
-
-#     def call(self, images):
-#         gf = 32
-#         images = self.layer1(images)
-#         images = LeakyReLU(alpha=0.2)(images)
-#         images = BatchNormalization(momentum=0.8)(images)
-#         images = self.layer2(images)
-#         images = LeakyReLU(alpha=0.2)(images)
-#         images = self.layer3(images)
-#         images = LeakyReLU(alpha=0.2)(images)
-#         images = self.layer4(images)
-#         images = LeakyReLU(alpha=0.2)(images)
-#         images = self.layer5(images)
-#         images = LeakyReLU(alpha=0.2)(images)
-#         images = self.layer6(images)
-#         images = LeakyReLU(alpha=0.2)(images)
-
-#         return images
-
-# def deconv2d(layer_input, filters, f_size=4, dropout_rate=0):
-#         """Layers used during upsampling"""
-#         u = UpSampling2D(size=2)(layer_input)
-#         u = Conv2D(filters, kernel_size=f_size, strides=1, padding='same', activation='relu')(u)
-#         if dropout_rate:
-#             u = Dropout(dropout_rate)(u)
-#         u = BatchNormalization(momentum=0.8)(u)
-#         return u
-# class Decoder(tf.keras.layers.Layer):
-#     def __init__(self):
-#         super(Decoder, self).__init__()
-#         self.layer1 = tf.keras.layers.Conv2D(256, kernel_size=5, strides=1, padding='same', activation='relu',kernel_initializer =tf.keras.initializers.RandomNormal(
-#     mean=0.0, stddev=0.1, seed=None
-# ))
-#         self.layer2 = tf.keras.layers.Conv2D(128, kernel_size=5, strides=1, padding='same', activation='relu',kernel_initializer =tf.keras.initializers.RandomNormal(
-#     mean=0.0, stddev=0.1, seed=None
-# ))
-#         self.layer3 = tf.keras.layers.Conv2D(128, kernel_size=5, strides=1, padding='same', activation='relu',kernel_initializer =tf.keras.initializers.RandomNormal(
-#     mean=0.0, stddev=0.1, seed=None
-# ))
-#         self.layer4 = tf.keras.layers.Conv2D(64, kernel_size=5, strides=1, padding='same', activation='relu',kernel_initializer =tf.keras.initializers.RandomNormal(
-#     mean=0.0, stddev=0.1, seed=None
-# ))
-#         self.layer5 = tf.keras.layers.Conv2D(32, kernel_size=5, strides=1, padding='same', activation='relu',kernel_initializer =tf.keras.initializers.RandomNormal(
-#     mean=0.0, stddev=0.1, seed=None
-# ))
-#         self.layer6 = tf.keras.layers.Conv2D(3, kernel_size=5, strides=1, padding='same', activation='tanh')
-
-#     def call(self, encoder_output):
-#         print(encoder_output.shape)
-#         image = tf.keras.layers.UpSampling2D(size=2)(encoder_output)
-#         image = self.layer1(image)
-#         image = BatchNormalization(momentum=0.8)(image)
-#         image = UpSampling2D(size=2)(image)
-#         image = self.layer2(image)
-#         image = BatchNormalization(momentum=0.8)(image)
-#         image = UpSampling2D(size=2)(image)
-#         image = self.layer3(image)
-#         image = BatchNormalization(momentum=0.8)(image)
-#         image = UpSampling2D(size=2)(image)
-#         image = self.layer4(image)
-#         image = BatchNormalization(momentum=0.8)(image)
-#         image = UpSampling2D(size=2)(image)
-#         image = self.layer5(image)
-#         image = BatchNormalization(momentum=0.8)(image)
-#         image = UpSampling2D(size=2)(image)
-#         output_img = self.layer6(image)
-#         return output_img
-
 class Encoder(tf.keras.layers.Layer):
     def __init__(self):
        super(Encoder, self).__init__()
@@ -197,52 +100,39 @@ def train(model, optimizer, source_images, target_images, totalLoss):
         optimizer.apply_gradients(zip(gradients, model.trainable_variables))
     return output, totalLoss
 
-
-
-
-
-
-
-
-
-
 if __name__ == '__main__':
-    # parser = ArgumentParser()
+    parser = ArgumentParser()
 
-    # parser.add_argument('--batch',type=int, default=4, required=False)
-    # parser.add_argument('--epochs',type=int, default=25, required=False)
-    # parser.add_argument('--loadWeights',type=bool, default=False, required=False)
-    # parser.add_argument('--pathToWeights',type=str, default='', required=False)
-    # parser.add_argument('--pathToData',type=str, default='project_data/bone_suppression_data/', required=True)
-    # parser.add_argument('--lr', type=float, default=.001, required=False)
-    # config = parser.parse_args()
+    parser.add_argument('--batch',type=int, default=4, required=False)
+    parser.add_argument('--epochs',type=int, default=25, required=False)
+    parser.add_argument('--loadWeights',type=bool, default=False, required=False, help='If you want to load weights, need to have this argument followed by True and using the --pathToData argument')
+    parser.add_argument('--pathToWeights',type=str, default='autoencoderWeights/74_26.0347843170166_autoencoderWeights.h5', required=False)
+    parser.add_argument('--pathToData',type=str, default='../project_data/bone_suppression_data/', required=False)
+    parser.add_argument('--lr', type=float, default=.001, required=False, help= "The initial learning rate for the optimizer")
+    parser.add_argument('--reducedlr', type=float, default=.0001, required=False, help="The reduced learning to rate to be changed after 25 epochs.")
+    parser.add_argument('--pathToWriteImage', type=str, default="./autoencoderOutputImages/", required=False, help="The path to where the output images will be stored.")
 
-    # gan = Pix2Pix(config.pathToData, config.lr)
-    # if config.loadWeights:
-    #     print("hia")
-    #     gan.combined.load_weights(f"{config.pathToWeights}/ganWeights.h5")
-    #     gan.generator.load_weights(f"{config.pathToWeights}/generatorWeights.h5")
-    #     gan.discriminator.load_weights(f"{config.pathToWeights}/discriminatorWeights.h5")
-    # gan.train(epochs=config.epochs, batch_size=config.batch, sample_interval=200)
-    # gan.combined.save_weights("ganWeights.h5")
-    # gan.generator.save_weights("generatorWeights.h5")
-    # gan.discriminator.save_weights("discriminatorWeights.h5")
-    data_loader = DataLoader(dataset_name='project_data/bone_supression_data',
+    config = parser.parse_args()
+
+
+    data_loader = DataLoader(dataset_name=config.pathToData,
                                       img_res=(1024, 1024))
     model = Autoencoder()
     model.built = True
-    optimizer = tf.keras.optimizers.Adam(learning_rate=0.0001) #initial learning rate is .001
-    epochs = 50
-    batch_size = 4
-    train(model, optimizer, np.zeros((1, 1024, 1024, 3)), np.zeros((1, 1024, 1024, 3)), [])
-    model.load_weights('autoencoderWeights/23_27.40587615966797_autoencoderWeights.h5')
+    optimizer = tf.keras.optimizers.Adam(learning_rate=config.lr) #initial learning rate is .001
+    epochs = config.epochs
+    batch_size = config.batch
+    if config.loadWeights:
+        train(model, optimizer, np.zeros((1, 1024, 1024, 3)), np.zeros((1, 1024, 1024, 3)), [])
+        model.load_weights(config.pathToWeights)
+    if not os.path.exists(config.pathToWriteImage):
+        os.mkdir(config.pathToWriteImage)
 
     with open('trainingAutoencoder.txt', 'w+') as f:
         for epoch in range(epochs):
             f.write(f"Epoch {epoch}/{epochs}")
             if epoch + 1 % 25 == 0:
-                print("in")
-                optimizer = tf.keras.optimizers.Adam(learning_rate=0.0001)
+                optimizer = tf.keras.optimizers.Adam(learning_rate = config.reducedlr)
             totalLoss = []
             for batch_i, (imgs_A, imgs_B, imgpaths) in enumerate(data_loader.load_batch(batch_size)):
 
@@ -255,27 +145,26 @@ if __name__ == '__main__':
                         org_data_left = org_data[:, :1024,:]
                         org_data_right = org_data[:, 1024:,:]
                         combined_out_img = np.concatenate((org_data_left,org_data_right, gen_output_img), 1)
-                        print(imgpaths[im])
-                        cv2.imwrite("/home/nasheath_ahmed/X-RayShadowRemovalAndClassification/autoencoderContinued/" + str(epoch) + "_" + str(batch_i) + "_" + imgpaths[im].split("/")[-1], combined_out_img)
+                        cv2.imwrite(config.pathToWriteImage + str(epoch) + "_" + str(batch_i) + "_" + imgpaths[im].split("/")[-1], combined_out_img)
                         break
             total_loss = np.sum(totalLoss)
             print(f"Loss of epoch: {totalLoss}")
-            model.save_weights(f'autoencoderWeights/{epoch + 25}_{total_loss}_autoencoderWeights.h5')
-            f.write(f"Epoch {epoch + 25} loss : {total_loss}")
+            model.save_weights(f'autoencoderWeights/{epoch}_{total_loss}_autoencoderWeights.h5')
+            f.write(f"Epoch {epoch} loss : {total_loss}")
     
     
     
-    receiver_emails = ['hossam_zaki@brown.edu', 'mohamad_abouelafia@brown.edu', 'nasheath_ahmed@brown.edu', 'andrew_aoun@brown.edu']
-    for bozo in receiver_emails:
-        port = 465
-        smtp_server = "smtp.gmail.com"
-        sender_email = "nasheathpython@gmail.com" # Enter your address
-        receiver_email = bozo # Enter receiver address
-        password = "nasheath24!"
-        message = 'Subject: {}\n\n{}'.format("whaddup bimbos", "This message is sent from Python saying your training is finished! aHaHa.")
+    # receiver_emails = ['hossam_zaki@brown.edu', 'mohamad_abouelafia@brown.edu', 'nasheath_ahmed@brown.edu', 'andrew_aoun@brown.edu']
+    # for bozo in receiver_emails:
+    #     port = 465
+    #     smtp_server = "smtp.gmail.com"
+    #     sender_email = "nasheathpython@gmail.com" # Enter your address
+    #     receiver_email = bozo # Enter receiver address
+    #     password = "nasheath24!"
+    #     message = 'Subject: {}\n\n{}'.format("whaddup bimbos", "This message is sent from Python saying your training is finished! aHaHa.")
 
-        context = ssl.create_default_context()
-        with smtplib.SMTP_SSL(smtp_server, port, context=context) as server:
-            server.login(sender_email, password)
-            server.sendmail(sender_email, receiver_email, message)
+    #     context = ssl.create_default_context()
+    #     with smtplib.SMTP_SSL(smtp_server, port, context=context) as server:
+    #         server.login(sender_email, password)
+    #         server.sendmail(sender_email, receiver_email, message)
 

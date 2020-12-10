@@ -17,23 +17,15 @@ def parse_args():
 
     parser = argparse.ArgumentParser(
         description="Let's train some neural nets!")
-    parser.add_argument(
-        '--load-checkpoint',
-        default=None,
-        help='''Path to model checkpoint file (should end with the
-        extension .h5). Checkpoints are automatically saved when you
-        train your model. If you want to continue training from where
-        you left off, this is how you would load your weights. In
-        the case of task 2, passing a checkpoint path will disable
-        the loading of VGG weights.''')
-    parser.add_argument(
-        '--evaluate',
-        action='store_true',
-        help='''Skips training and evaluates on the test set once.
-        You can use this to test an already trained model by loading
-        its checkpoint.''')
+    parser.add_argument('--datasetname', type=str, default="/home/nasheath_ahmed/X-RayShadowRemovalAndClassification/project_data/classificationProcessed", help="name of the directory of the data")
+    parser.add_argument('--epochs', type=float, default=25, help='the number of epochs to train for')
+    parser.add_argument('--batchsize', type=float, default=4, help='the batch size to use')
+    parser.add_argument('--patience', type=float, default=1, help='the patience for LR on plateau')
+    parser.add_argument('--verbose', type=float, default=2, help='the verbose setting on test')
+    parser.add_argument('--learningrate', type=float, default=.00001, help='the optimizer learning rate')
 
     return parser.parse_args()
+
 
 def train(model, datasets, checkpoint_path):
     """ Training routine. """
@@ -52,7 +44,7 @@ def train(model, datasets, checkpoint_path):
             profile_batch=0),
         tf.keras.callbacks.ReduceLROnPlateau(
             monitor='loss', 
-            patience=2, 
+            patience=ARGS.patience, 
             mode='min')
     ]
 
@@ -61,8 +53,8 @@ def train(model, datasets, checkpoint_path):
     model.fit(
         x=datasets.train_data,
         validation_data=datasets.test_data,
-        epochs=25,
-        batch_size=None,
+        epochs=ARGS.epochs,
+        batch_size=ARGS.batchsize,
         callbacks=callback_list,
     )
 
@@ -72,14 +64,15 @@ def test(model, test_data):
     # Run model on test set
     model.evaluate(
         x=test_data,
-        verbose=1,
+        verbose=ARGS.verbose,
     )
 
 
 def main():
     """ Main function. """
 
-    datasets = Datasets('../project_data/classificationProcessed')
+    # datasets = Datasets('../project_data/classificationProcessed')
+    datasets = Datasets(ARGS.basepath)
 
     model = ChestClassModel()
     model(tf.keras.Input(shape=(512, 512, 3)))
@@ -91,7 +84,8 @@ def main():
         model.load_weights(ARGS.load_checkpoint)
 
     # Compile model graph
-    optimizer = tf.keras.optimizers.Adam(learning_rate=0.00001)
+    # optimizer = tf.keras.optimizers.Adam(learning_rate=0.00001)
+    optimizer = tf.keras.optimizers.Adam(learning_rate=ARGS.learningrate)
     #changed from sparse_categorical 
     model.compile(
         optimizer=optimizer,

@@ -17,42 +17,26 @@ import numpy as np
 import os
 import cv2
 import smtplib, ssl
+import argparse
+from argparse import ArgumentParser
+import cv2
 
+from autoencoder import Autoencoder
 
-from pix2pix import Pix2Pix
+image = cv2.imread('project_data/classificationProcessed/test/Atelectasis/00001088_017.png')
 
-gan = Pix2Pix('',0 )
+autoencoder = Autoencoder()
 
-gan.combined.load_weights("bestWeights/ganWeights.h5")
-gan.generator.load_weights("bestWeights/generatorWeights.h5")
-gan.discriminator.load_weights("bestWeights/discriminatorWeights.h5")
+autoencoder.predict(tf.cast(tf.expand_dims(image, axis=0), tf.float32))
+autoencoder.load_weights('autoencoderWeights/23_27.40587615966797_autoencoderWeights.h5')
 
+prediction = autoencoder.predict(tf.cast(tf.expand_dims(image, axis=0), tf.float32))
 
-image = cv2.imread('./project_data/classificationProcessed/val/Pleural_Thickening/00002123_000.png')/127.5 -1
-print(image.shape)
-gray = cv2.cvtColor(np.float32(image), cv2.COLOR_BGR2GRAY)
-fake_A = gan.generator.predict(np.expand_dims(gray, axis=0))
-gen_output_img = (fake_A +1) * 127.5
-print(np.squeeze(gen_output_img).shape)
-cv2.imwrite("test_example.png", np.squeeze(gray))
-cv2.imwrite("test.png", np.squeeze(gen_output_img))
-quit()
-data_loader = DataLoader(dataset_name="bone_supression_data",
-                                      img_res=(1024, 1024))
-for batch_i, (imgs_A, imgs_B, imgpaths) in enumerate(data_loader.load_batch(1, is_testing=True)):
-    # ---------------------
-    #  Train Discriminator
-    # ---------------------
-    # Condition on B and generate a translated version
-    fake_A = gan.generator.predict(imgs_B)
-    for im in range(len(fake_A)):
-        gen_output_img = (fake_A[im] + 1) * 127.5
-        org_data = cv2.imread(imgpaths[im])
-        org_data = cv2.resize(org_data, (gan.img_rows *2, gan.img_cols))
-        org_data_left = org_data[:, :gan.img_cols,:]
-        org_data_right = org_data[:, gan.img_cols:,:]
-        combined_out_img = np.concatenate((org_data_left,org_data_right, gen_output_img), 1)
-        print(imgpaths[im])
-        cv2.imwrite("/home/nasheath_ahmed/X-RayShadowRemovalAndClassification/validated_images_OG_continued/" + imgpaths[im].split("/")[-1], combined_out_img)
-        break
+hmchong = np.float32(cv2.imread('../ML-BoneSuppression/tester.png'))
+ours = np.float32(cv2.imread('tester.png'))
 
+mse = tf.reduce_mean(tf.reduce_mean(tf.math.squared_difference(hmchong, ours), 1))
+ssim = tf.reduce_mean(1 - tf.image.ssim_multiscale(tf.cast(hmchong, tf.float32), tf.cast(ours, tf.float32), 1))
+print(.85*ssim + (1 - .85)*mse)
+
+cv2.imwrite('tester.png', np.float32(tf.squeeze(prediction)))

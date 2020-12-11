@@ -4,9 +4,9 @@
 
 No known bugs. The autoencoder folder deals with all code related to suppressing bone shadows.
 
-The pix2pix.py file has code related to the GAN model that was initially implemented. The current iteration uses the autoencoder.py file for this feature suppression.
+The pix2pix.py file has code related to the GAN model that was initially implemented. The current iteration uses the autoencoder.py file for this feature suppression. Please see autoencoder.py for available options. 
 
-The preprocess .py file will set up the data into respective train validation and test folders so that we can run the training algorithm on it. It takes in arguments, variable from the command line, and there are defaults set to it. These include:
+The preprocess.py file will set up the data into respective train validation and test folders so that we can run the training algorithm on it. It takes in arguments, variable from the command line, and there are defaults set to it. These include:
 
     --datasetname (input data name)
     --basepath (project path)
@@ -15,6 +15,8 @@ The preprocess .py file will set up the data into respective train validation an
 The data loader file will deal with loading in the data to preprocess
 
 image.py will run all validation images on a pre-loaded model
+
+you may also use testModel.py to test the autoencoder on different pictures
 
     --> Classification
 

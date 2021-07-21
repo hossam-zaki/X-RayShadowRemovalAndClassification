@@ -1,6 +1,6 @@
 # X-RayShadowRemovalAndClassification
 
-    --> Autoencoder
+## Autoencoder
 
 No known bugs. The autoencoder folder deals with all code related to suppressing bone shadows.
 
@@ -18,7 +18,7 @@ image.py will run all validation images on a pre-loaded model
 
 you may also use testModel.py to test the autoencoder on different pictures
 
-    --> Classification
+## Classification
 
 No known bugs. The classification folder deals with all code related to classifiying disease images both with and without feature suppression. All relevant files will be explained in this section.
 
